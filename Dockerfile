@@ -19,14 +19,14 @@ WORKDIR /var/www/html
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy composer files first
+# Copy application files first, excluding vendor directory
+COPY . .
+
+# Copy composer files (will overwrite the ones copied above)
 COPY composer.json composer.lock ./
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts
-
-# Copy application files
-COPY . .
 
 # Verify vendor directory exists and has correct permissions
 RUN ls -la /var/www/html/vendor && \
