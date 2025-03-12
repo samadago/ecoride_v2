@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: ecoride_web
     ports:
-      - "80:80"
+      - "81:80"
     volumes:
       - .:/var/www/html
       - ./public/assets/uploads:/var/www/html/public/assets/uploads
