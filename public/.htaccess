@@ -1,0 +1,18 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# Block direct access to HTML files
+RewriteRule \.html$ - [F]
+
+# If the requested file or directory exists, serve it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, redirect all requests to index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# Disable directory listing
+Options -Indexes

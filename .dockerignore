@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Build and cache
+/build/
+/dist/
+/cache/
+
+# Logs
+*.log
+/logs/
+
+# Test files
+/tests/
+/phpunit.xml
+
+# Documentation
+/docs/
+README.md
+CHANGELOG.md
+LICENSE
+
+# Docker
+.docker/
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+
+# Application uploads
+/public/assets/uploads/*
+!/public/assets/uploads/.gitkeep

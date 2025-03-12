@@ -1,0 +1,51 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Composer dependencies
+/vendor/
+composer.phar
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application specific
+/public/assets/uploads/*
+!/public/assets/uploads/.gitkeep
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Logs
+*.log
+/logs/*
+!/logs/.gitkeep
+
+# Cache files
+*.cache
+/cache/*
+!/cache/.gitkeep
+
+# Build files
+/build/
+/dist/
+/node_modules/
+
+# Database
+*.sql
+*.sqlite
+!/database/schema.sql
