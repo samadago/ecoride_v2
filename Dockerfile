@@ -38,6 +38,7 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod 644 /var/www/html/app/config/routes.php \
     && chmod -R +x /var/www/html/app
 
+
 # Apache Virtual Host configuration
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     && echo '<VirtualHost *:80>\n\
@@ -51,6 +52,7 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     ErrorLog ${APACHE_LOG_DIR}/error.log\n\
     CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
     </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+
 
 EXPOSE 80
 
