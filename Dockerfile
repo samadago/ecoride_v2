@@ -23,13 +23,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 
 # Install dependencies
-RUN composer install --no-dev --no-scripts --no-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # Copy application files
 COPY . .
 
-# Generate optimized autoload files
-RUN composer dump-autoload --optimize
+# Verify vendor directory exists and has correct permissions
+RUN ls -la /var/www/html/vendor && \
+    chown -R www-data:www-data /var/www/html/vendor
 
 # Create directory for profile uploads and set permissions
 RUN mkdir -p /var/www/html/public/assets/uploads
