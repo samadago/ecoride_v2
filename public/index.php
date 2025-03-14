@@ -35,42 +35,36 @@ if (file_exists($dotenv)) {
     }
 }
 
-// Base path is already defined above
-
 // Autoload classes
+require_once BASE_PATH . '/vendor/autoload.php';
+
+// Custom autoloader for any remaining classes
 spl_autoload_register(function ($class) {
+    // Convert namespace separators to directory separators
     $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
     
-    // First try to load from the base path (for namespaced classes)
-    $file = BASE_PATH . DIRECTORY_SEPARATOR . $class . '.php';
-    if (file_exists($file)) {
-        require_once $file;
-        return true;
-    }
+    // Map namespace roots to directories
+    $namespaceMap = [
+        'App\\Models\\' => BASE_PATH . '/app/models/',
+        'App\\Helpers\\' => BASE_PATH . '/app/helpers/',
+        'App\\Config\\' => BASE_PATH . '/app/config/',
+        'App\\Controllers\\' => BASE_PATH . '/app/controllers/'
+    ];
     
-    // Then try to load from models directory
-    $modelFile = BASE_PATH . '/app/models/' . $class . '.php';
-    if (file_exists($modelFile)) {
-        require_once $modelFile;
-        return true;
-    }
-    
-    // Then try to load from helpers directory
-    $helperFile = BASE_PATH . '/app/helpers/' . $class . '.php';
-    if (file_exists($helperFile)) {
-        require_once $helperFile;
-        return true;
-    }
-    
-    // Then try to load from config directory
-    $configFile = BASE_PATH . '/app/config/' . $class . '.php';
-    if (file_exists($configFile)) {
-        require_once $configFile;
-        return true;
+    // Check each namespace mapping
+    foreach ($namespaceMap as $namespace => $directory) {
+        if (strpos($class, $namespace) === 0) {
+            // Remove namespace prefix and add .php extension
+            $classPath = $directory . substr($class, strlen($namespace)) . '.php';
+            if (file_exists($classPath)) {
+                require_once $classPath;
+                return true;
+            }
+        }
     }
     
     return false;
-}); 
+});
 
 // Load configuration
 $routes = require_once BASE_PATH . '/app/config/routes.php';
@@ -134,18 +128,11 @@ if (isset($routes[$uri])) {
 if ($routeFound) {
     try {
         // Load the controller
-        $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
-        if (!file_exists($controllerFile)) {
-            throw new Exception("Controller file not found: {$controllerName}");
+        $controllerClass = "\\App\\Controllers\\" . $controllerName;
+        if (!class_exists($controllerClass)) {
+            throw new Exception("Controller class not found: {$controllerClass}");
         }
-        require_once $controllerFile;
-        
-        // Create controller instance and call action
-        $controllerName = "\\App\\Controllers\\" . $controllerName;
-        if (!class_exists($controllerName)) {
-            throw new Exception("Controller class not found: {$controllerName}");
-        }
-        $controller = new $controllerName();
+        $controller = new $controllerClass();
         
         if (!method_exists($controller, $actionName)) {
             throw new Exception("Action method not found: {$actionName}");
