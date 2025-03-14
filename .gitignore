@@ -3,9 +3,9 @@
 .env.*
 !.env.example
 
-# Composer dependencies
-/vendor/
-composer.phar
+# # Composer dependencies
+# /vendor/
+# composer.phar
 
 # IDE and editor files
 .idea/
