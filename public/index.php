@@ -45,10 +45,10 @@ spl_autoload_register(function ($class) {
     
     // Map namespace roots to directories
     $namespaceMap = [
-        'App\\Models\\' => BASE_PATH . '/App/Models/',
-        'App\\Helpers\\' => BASE_PATH . '/App/Helpers/',
-        'App\\Config\\' => BASE_PATH . '/App/Config/',
-        'App\\Controllers\\' => BASE_PATH . '/App/Controllers/'
+        'App\\Models\\' => BASE_PATH . '/app/models/',
+        'App\\Helpers\\' => BASE_PATH . '/app/helpers/',
+        'App\\Config\\' => BASE_PATH . '/app/config/',
+        'App\\Controllers\\' => BASE_PATH . '/app/controllers/'
     ];
     
     // Check each namespace mapping
