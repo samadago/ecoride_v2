@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -7,8 +7,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASS}
       MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_ROOT_HOST: '%'
-    command: 
+      MYSQL_ROOT_HOST: "%"
+    command:
       - --default-authentication-plugin=mysql_native_password
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -21,9 +21,7 @@ services:
       - ecoride-net
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/samadago/ecoride_v2:latest
     container_name: ecoride_web
     ports:
       - "81:80"
