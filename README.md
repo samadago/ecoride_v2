@@ -35,34 +35,85 @@ EcoRide est une plateforme de covoiturage qui permet :
 
 ## 🚀 Installation
 
-### Prérequis
-- Docker et Docker Compose installés
-- Git pour le contrôle de version
+### Configuration du fichier .env
 
-### Étapes d'installation
+Créez un fichier `.env` à la racine du projet avec les variables suivantes :
+
+```bash
+# Configuration de la base de données
+DB_HOST=localhost    # En dev: localhost ou 127.0.0.1, en prod: ecoride_db
+DB_NAME=ecoride
+DB_USER=ecoride
+DB_PASS=votre_mot_de_passe
+
+# Configuration de l'application
+APP_URL=http://localhost:8000    # En dev: http://localhost:8000, en prod: https://ecoride.space
+APP_ENV=development    # En dev: development, en prod: production
+```
+
+### Environnement de développement
+
 1. Cloner le dépôt :
 ```bash
 git clone https://github.com/samadago/ecoride_v2.git
-cd new_ecoride
+cd ecoride_v2
 ```
 
 2. Copier le fichier d'environnement et le configurer :
 ```bash
 cp .env.example .env
 ```
-Mettez à jour les variables d'environnement dans `.env` avec votre configuration.
+Mettez à jour les variables d'environnement dans `.env` avec votre configuration de développement (DB_HOST=localhost ou 127.0.0.1).
+
+3. Démarrer uniquement le conteneur de base de données :
+```bash
+docker compose up -d db
+```
+
+4. Installer les dépendances PHP :
+```bash
+composer install
+```
+
+5. Créer le dossier d'uploads avec les permissions appropriées :
+```bash
+mkdir -p public/assets/uploads
+chmod -R 777 public/assets/uploads
+```
+
+6. Lancer le serveur de développement PHP :
+```bash
+php -S localhost:8000 -t public
+```
+
+7. L'application sera disponible sur : http://localhost:8000
+
+### Environnement de production
+
+1. Cloner le dépôt sur votre serveur :
+```bash
+git clone https://github.com/samadago/ecoride_v2.git
+cd ecoride_v2
+```
+
+2. Copier le fichier d'environnement et le configurer :
+```bash
+cp .env.example .env
+```
+Mettez à jour les variables d'environnement dans `.env` avec votre configuration de production (DB_HOST=ecoride_db).
 
 3. Démarrer les conteneurs Docker :
 ```bash
 docker compose up -d --build
 ```
 
-4. Installer les dépendances PHP :
+4. Créer le dossier d'uploads avec les permissions appropriées :
 ```bash
-docker-compose exec web composer install
+mkdir -p public/assets/uploads
+chmod -R 777 public/assets/uploads
 ```
 
-5. L'application sera disponible sur : http://localhost
+5. L'application sera disponible sur l'URL configurée dans votre serveur.
 
 ## 🚀 Déploiement sur Hostinger avec Docker Compose
 
@@ -79,16 +130,32 @@ docker-compose exec web composer install
     ssh root@ip_vps_hostinger
     ```
 
-2. **Build de l'image docker en local & lancement du compose**
+2. **Cloner le dépôt et configurer l'environnement**
+    ```bash
+    git clone https://github.com/samadago/ecoride_v2.git
+    cd ecoride_v2
+    cp .env.example .env
+    # Modifier le fichier .env avec les paramètres de production
+    # DB_HOST=ecoride_db
+    # APP_ENV=production
+    # APP_URL=https://ecoride.space
+    ```
+
+3. **Build de l'image docker et lancement du compose**
     ```bash
     docker compose up -d --build
     ```
-    > La version de l'image doit s'incrémenter a chaque montée de version de l'application.
+    > La version de l'image doit s'incrémenter à chaque montée de version de l'application.
 
+4. **Configurer les permissions du dossier d'uploads**
+    ```bash
+    mkdir -p public/assets/uploads
+    chmod -R 777 public/assets/uploads
+    ```
 
 ### Post-déploiement
 - Configurer le DNS dans le panel Hostinger
-- Activer SSL via DADDY
+- Activer SSL via CADDY
 - Tester l'application : https://ecoride.space
 
 ## 📖 Utilisation
