@@ -26,7 +26,6 @@ services:
     ports:
       - "81:80"
     volumes:
-      - .:/var/www/html
       - ./public/assets/uploads:/var/www/html/public/assets/uploads
     environment:
       DB_HOST: ecoride_db
