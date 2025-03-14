@@ -24,11 +24,18 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Copy application source
 COPY . .
 
+# Ensure directories exist with correct case
+RUN mkdir -p /var/www/html/App/Controllers \
+    /var/www/html/App/Models \
+    /var/www/html/App/Helpers \
+    /var/www/html/App/Config
+
 # Permissions (after COPY!)
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \; \
-    && chmod -R 775 /var/www/html/public/assets/uploads
+    && chmod -R 775 /var/www/html/public/assets/uploads \
+    && chmod -R +x /var/www/html/App
 
 # Apache Virtual Host configuration
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
@@ -36,13 +43,13 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     ServerName localhost\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
-        Options -Indexes +FollowSymLinks\n\
-        AllowOverride All\n\
-        Require all granted\n\
+    Options -Indexes +FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
     </Directory>\n\
     ErrorLog ${APACHE_LOG_DIR}/error.log\n\
     CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+    </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
 
