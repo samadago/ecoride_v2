@@ -45,10 +45,10 @@ spl_autoload_register(function ($class) {
     
     // Map namespace roots to directories
     $namespaceMap = [
-        'App\\Models\\' => BASE_PATH . '/app/models/',
-        'App\\Helpers\\' => BASE_PATH . '/app/helpers/',
-        'App\\Config\\' => BASE_PATH . '/app/config/',
-        'App\\Controllers\\' => BASE_PATH . '/app/controllers/'
+        'App\\Models\\' => BASE_PATH . '/App/Models/',
+        'App\\Helpers\\' => BASE_PATH . '/App/Helpers/',
+        'App\\Config\\' => BASE_PATH . '/App/Config/',
+        'App\\Controllers\\' => BASE_PATH . '/App/Controllers/'
     ];
     
     // Check each namespace mapping
@@ -129,6 +129,10 @@ if ($routeFound) {
     try {
         // Load the controller
         $controllerClass = "\\App\\Controllers\\" . $controllerName;
+        error_log("Attempting to load controller: " . $controllerClass);
+        error_log("Current BASE_PATH: " . BASE_PATH);
+        error_log("Full controller path: " . BASE_PATH . '/App/Controllers/' . $controllerName . '.php');
+        
         if (!class_exists($controllerClass)) {
             throw new Exception("Controller class not found: {$controllerClass}");
         }

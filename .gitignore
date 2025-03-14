@@ -49,3 +49,6 @@ docker-compose.override.yml
 *.sql
 *.sqlite
 !/database/schema.sql
+
+# Cursor
+.cursor/*
