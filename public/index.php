@@ -129,13 +129,19 @@ if ($routeFound) {
     try {
         // Load the controller
         $controllerClass = "\\App\\Controllers\\" . $controllerName;
-        error_log("Attempting to load controller: " . $controllerClass);
-        error_log("Current BASE_PATH: " . BASE_PATH);
-        error_log("Full controller path: " . BASE_PATH . '/App/Controllers/' . $controllerName . '.php');
+        $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
+        
+        // Include the controller file directly
+        if (file_exists($controllerFile)) {
+            require_once $controllerFile;
+        } else {
+            throw new Exception("Controller file not found: {$controllerFile}");
+        }
         
         if (!class_exists($controllerClass)) {
             throw new Exception("Controller class not found: {$controllerClass}");
         }
+        
         $controller = new $controllerClass();
         
         if (!method_exists($controller, $actionName)) {
