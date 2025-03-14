@@ -146,13 +146,28 @@ class AuthController {
     }
     
     public function logout() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Clear all session data
+        $_SESSION = array();
+        
+        // Destroy the session cookie
+        if (isset($_COOKIE[session_name()])) {
+            setcookie(session_name(), '', time() - 3600, '/');
+        }
+        
         // Destroy the session
-        session_start();
-        session_unset();
         session_destroy();
         
-        // Redirect to home page
-        header('Location: /');
-        exit;
+        // Ensure no output has been sent before redirecting
+        if (!headers_sent()) {
+            header('Location: /');
+            exit;
+        } else {
+            echo '<script>window.location.href = "/";</script>';
+            exit;
+        }
     }
 }
