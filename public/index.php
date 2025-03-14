@@ -69,6 +69,24 @@ spl_autoload_register(function ($class) {
 // Load configuration
 $routes = require_once BASE_PATH . '/app/config/routes.php';
 
+// Before loading controllers, preload all models and helpers
+$modelFiles = glob(BASE_PATH . '/app/models/*.php');
+foreach ($modelFiles as $modelFile) {
+    require_once $modelFile;
+}
+
+$helperFiles = glob(BASE_PATH . '/app/helpers/*.php');
+foreach ($helperFiles as $helperFile) {
+    require_once $helperFile;
+}
+
+$configFiles = glob(BASE_PATH . '/app/config/*.php');
+foreach ($configFiles as $configFile) {
+    if (basename($configFile) !== 'routes.php') {
+        require_once $configFile;
+    }
+}
+
 // Start session
 session_start();
 
