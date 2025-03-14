@@ -1,6 +1,6 @@
 FROM php:8.1-apache
 
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
@@ -8,44 +8,31 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     git \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Install composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Composer explicitly version 2
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy composer files first
+# Install composer dependencies first
 COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Copy application files
+# Copy application source
 COPY . .
 
-# Verify vendor directory exists and has correct permissions
-RUN ls -la /var/www/html/vendor && \
-    chown -R www-data:www-data /var/www/html/vendor
-
-# Create directory for profile uploads and set permissions
-RUN mkdir -p /var/www/html/public/assets/uploads
-
-# Set proper permissions
+# Permissions (after COPY!)
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \; \
     && chmod -R 775 /var/www/html/public/assets/uploads
 
-# Set ServerName globally to suppress warning
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Configure Apache virtual host
-RUN echo '<VirtualHost *:80>\n\
+# Apache Virtual Host configuration
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && echo '<VirtualHost *:80>\n\
     ServerName localhost\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
