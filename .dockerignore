@@ -16,7 +16,6 @@
 .DS_Store
 
 # Dependencies
-/vendor/
 /node_modules/
 
 # Build and cache
