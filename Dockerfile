@@ -25,10 +25,10 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 COPY . .
 
 # Ensure directories exist with correct case
-RUN mkdir -p /var/www/html/App/Controllers \
-    /var/www/html/App/Models \
-    /var/www/html/App/Helpers \
-    /var/www/html/App/Config
+RUN mkdir -p /var/www/html/app/controllers \
+    /var/www/html/app/models \
+    /var/www/html/app/helpers \
+    /var/www/html/app/config
 
 # Permissions (after COPY!)
 RUN chown -R www-data:www-data /var/www/html \
