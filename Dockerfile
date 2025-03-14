@@ -35,7 +35,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \; \
     && chmod -R 775 /var/www/html/public/assets/uploads \
-    && chmod -R +x /var/www/html/App
+    && chmod 644 /var/www/html/app/config/routes.php \
+    && chmod -R +x /var/www/html/app
 
 # Apache Virtual Host configuration
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
