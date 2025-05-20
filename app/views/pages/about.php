@@ -76,17 +76,17 @@
                 <p>EcoRide est animé par une équipe diversifiée de professionnels passionnés par la mobilité durable et l'innovation technologique. Ensemble, nous travaillons chaque jour pour améliorer notre service et créer une expérience de covoiturage exceptionnelle.</p>
                 <div class="team-grid">
                     <div class="team-member">
-                        <img src="/assets/images/team1.jpg" alt="Membre de l'équipe" class="rounded-image">
+                        <img src="/assets/images/directrice.jpg" alt="Membre de l'équipe" class="rounded-image">
                         <h3>Sophie Martin</h3>
                         <p>Fondatrice & CEO</p>
                     </div>
                     <div class="team-member">
-                        <img src="/assets/images/team2.jpg" alt="Membre de l'équipe" class="rounded-image">
+                        <img src="/assets/images/technicien.jpg" alt="Membre de l'équipe" class="rounded-image">
                         <h3>Thomas Dubois</h3>
                         <p>Directeur Technique</p>
                     </div>
                     <div class="team-member">
-                        <img src="/assets/images/team3.jpg" alt="Membre de l'équipe" class="rounded-image">
+                        <img src="/assets/images/c:\Users\mukar\Downloads\marketing-fille.jpg.jpg" alt="Membre de l'équipe" class="rounded-image">
                         <h3>Emma Leclerc</h3>
                         <p>Responsable Marketing</p>
                     </div>
