@@ -33,6 +33,9 @@
                     </button>
                     <div class="dropdown-menu">
                         <?php if (\App\Helpers\Auth::isLoggedIn()): ?>
+                            <?php if (\App\Helpers\Auth::isAdmin()): ?>
+                                <a href="/admin">Administration</a>
+                            <?php endif; ?>
                             <a href="/profil">Mon profil</a>
                             <a href="/deconnexion">Déconnexion</a>
                         <?php else: ?>
@@ -55,6 +58,9 @@
                 <li><a href="/contact" <?php echo ($currentPage ?? '') === 'contact' ? 'class="active"' : ''; ?>>Contact</a></li>
                 <li><a href="/a-propos" <?php echo ($currentPage ?? '') === 'about' ? 'class="active"' : ''; ?>>À propos</a></li>
                 <?php if (\App\Helpers\Auth::isLoggedIn()): ?>
+                    <?php if (\App\Helpers\Auth::isAdmin()): ?>
+                        <li><a href="/admin">Administration</a></li>
+                    <?php endif; ?>
                     <li><a href="/profil">Mon profil</a></li>
                     <li><a href="/deconnexion">Déconnexion</a></li>
                 <?php else: ?>

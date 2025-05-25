@@ -14,10 +14,11 @@ class Database {
         $dbname = getenv('DB_NAME') ?: 'ecoride';
         $username = getenv('DB_USER') ?: 'root';
         $password = getenv('DB_PASS') ?: '';
+        $port = getenv('DB_PORT') ?: '3306';
         
         try {
             $this->connection = new PDO(
-                "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
+                "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4",
                 $username,
                 $password,
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
@@ -60,5 +61,32 @@ class Database {
     
     public function lastInsertId() {
         return $this->connection->lastInsertId();
+    }
+    
+    /**
+     * Begin a transaction
+     * 
+     * @return bool
+     */
+    public function beginTransaction() {
+        return $this->connection->beginTransaction();
+    }
+    
+    /**
+     * Commit a transaction
+     * 
+     * @return bool
+     */
+    public function commit() {
+        return $this->connection->commit();
+    }
+    
+    /**
+     * Roll back a transaction
+     * 
+     * @return bool
+     */
+    public function rollBack() {
+        return $this->connection->rollBack();
     }
 }

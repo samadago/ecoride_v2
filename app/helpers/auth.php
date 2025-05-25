@@ -58,6 +58,17 @@ class Auth {
     }
     
     /**
+     * Check if the logged-in user is an admin
+     * 
+     * @return bool
+     */
+    public static function isAdmin() {
+        self::init();
+        return self::isLoggedIn() && isset($_SESSION['user']['is_admin']) && 
+               ($_SESSION['user']['is_admin'] === true || $_SESSION['user']['is_admin'] === 1 || $_SESSION['user']['is_admin'] === '1');
+    }
+    
+    /**
      * Get current user data
      * 
      * @return array|null User data or null if not logged in

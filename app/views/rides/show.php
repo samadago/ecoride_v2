@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Détail du covoiturage - EcoRide</title>
     <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/ride-status.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-
 
     <!-- Détail du covoiturage -->
     <section class="ride-detail">
@@ -18,7 +18,7 @@
                 <a href="/covoiturages"><i class="fas fa-arrow-left"></i> Retour aux résultats</a>
             </div>
             
-            <div class="detail-card">
+            <div class="detail-card <?= 'status-' . ($ride['status'] ?? 'pending') ?>">
                 <div class="detail-header">
                     <div class="route-summary">
                         <h2><?= htmlspecialchars($ride['departure_location']) ?> → <?= htmlspecialchars($ride['arrival_location']) ?></h2>
@@ -32,6 +32,56 @@
                         <span class="per-person">par personne</span>
                     </div>
                 </div>
+                
+                <?php
+                // Only show status section if user is logged in and has a relationship with this ride
+                $isLoggedIn = \App\Helpers\Auth::isLoggedIn();
+                $currentUser = $isLoggedIn ? \App\Helpers\Auth::user() : null;
+                $isDriver = $isLoggedIn && $currentUser['id'] == $ride['user_id'];
+                $isAdmin = $isLoggedIn && isset($currentUser['is_admin']) && $currentUser['is_admin'];
+                
+                // Check if user is a passenger
+                $isPassenger = false;
+                if ($isLoggedIn) {
+                    require_once BASE_PATH . '/app/models/Booking.php';
+                    $bookingModel = new \App\Models\Booking();
+                    $isPassenger = $bookingModel->checkExistingBooking($ride['id'], $currentUser['id']);
+                }
+                
+                // Show status section if user has a relationship with this ride
+                $canManageStatus = $isDriver || $isPassenger || $isAdmin;
+                ?>
+                
+                <?php if ($canManageStatus): ?>
+                <div class="ride-status-section">
+                    <h3>Statut du trajet</h3>
+                    <div class="status-display">
+                        <span class="status-label">Statut actuel:</span>
+                        <span id="ride-status" class="ride-status status-<?= $ride['status'] ?? 'pending' ?>">
+                            <?php 
+                            $statusLabels = [
+                                'pending' => 'En attente',
+                                'ongoing' => 'En cours',
+                                'completed' => 'Terminé',
+                                'cancelled' => 'Annulé'
+                            ];
+                            echo $statusLabels[$ride['status'] ?? 'pending'];
+                            ?>
+                        </span>
+                    </div>
+                    
+                    <?php if ($isDriver || $isAdmin): ?>
+                    <div class="status-actions">
+                        <button class="status-btn btn-pending" data-status="pending" <?= ($ride['status'] == 'pending') ? 'disabled' : '' ?>>Marquer comme en attente</button>
+                        <button class="status-btn btn-ongoing" data-status="ongoing" <?= ($ride['status'] == 'ongoing') ? 'disabled' : '' ?>>Démarrer le trajet</button>
+                        <button class="status-btn btn-completed" data-status="completed" <?= ($ride['status'] == 'completed') ? 'disabled' : '' ?>>Terminer le trajet</button>
+                        <button class="status-btn btn-cancelled" data-status="cancelled" <?= ($ride['status'] == 'cancelled') ? 'disabled' : '' ?>>Annuler le trajet</button>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <input type="hidden" id="ride-id" value="<?= $ride['id'] ?>">
+                </div>
+                <?php endif; ?>
                 
                 <div class="detail-content">
                     <div class="detail-left">
@@ -48,7 +98,7 @@
                                 </div>
                             </div>
                             <div class="route-point arrival">
-                                <div class="time"><!-- Arrival time if available --></div>
+                                <div class="time"><?= date('H:i', strtotime($ride['estimated_arrival_time'] ?? $ride['departure_time'])) ?></div>
                                 <div class="point-marker">
                                     <i class="fas fa-map-marker-alt"></i>
                                 </div>
@@ -94,7 +144,7 @@
                             </div>
                         </div>
                         
-                        <?php if (\App\Helpers\Auth::isLoggedIn() && \App\Helpers\Auth::user()['id'] != $ride['user_id']): ?>
+                        <?php if (\App\Helpers\Auth::isLoggedIn() && \App\Helpers\Auth::user()['id'] != $ride['user_id'] && ($ride['status'] == 'pending')): ?>
                         <div class="booking-section">
                             <h3>Réserver</h3>
                             <form class="booking-form" action="/reserver-trajet" method="post">
@@ -119,33 +169,24 @@
                             <p>Connectez-vous pour réserver ce trajet</p>
                             <a href="/connexion" class="btn btn-secondary">Se connecter</a>
                         </div>
+                        <?php elseif ($ride['status'] != 'pending'): ?>
+                        <div class="booking-closed">
+                            <p>Les réservations sont fermées pour ce trajet.</p>
+                            <p>Statut: 
+                                <span class="ride-status status-<?= $ride['status'] ?>">
+                                    <?= $statusLabels[$ride['status']] ?>
+                                </span>
+                            </p>
+                        </div>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Footer -->
-    <!-- <footer>
-        <div class="container">
-            <div class="social">
-                <h3>Suivez-nous</h3>
-                <div class="social-icons">
-                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-square"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
-                </div>
-            </div>
-            <div class="contact-info">
-                <a href="mailto:contact@ecoride.space">contact@ecoride.space</a>
-            </div>
-            <div class="legal">
-                <a href="/mentions-legales">Mentions légales</a>
-            </div>
-        </div>
-    </footer> -->
 
     <script src="/assets/js/scripts.js"></script>
+    <script src="/assets/js/ride-status.js"></script>
 </body>
 </html>
 
@@ -166,10 +207,3 @@
         <?php unset($_SESSION['booking_errors']); ?>
     </div>
 <?php endif; ?>
-
-    </section>
-
-    <script src="/assets/js/scripts.js"></script>
-
-</body>
-</html>

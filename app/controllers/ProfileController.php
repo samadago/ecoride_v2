@@ -39,7 +39,20 @@ class ProfileController {
         
         // Get user's bookings
         $bookingModel = new \App\Models\Booking();
-        $bookings = $bookingModel->getByPassengerId($userId);
+        $bookings = $bookingModel->getPassengerBookings($userId);
+        
+        // Get credit transactions and requests
+        require_once BASE_PATH . '/app/models/CreditTransaction.php';
+        require_once BASE_PATH . '/app/models/CreditRequest.php';
+        
+        $transactionModel = new \App\Models\CreditTransaction();
+        $requestModel = new \App\Models\CreditRequest();
+        
+        // Get recent transactions
+        $transactions = $transactionModel->getByUserId($userId, null, 10);
+        
+        // Get credit requests
+        $creditRequests = $requestModel->getByUserId($userId);
         
         // Include the view
         require_once BASE_PATH . '/app/views/profile/index.php';
@@ -88,5 +101,132 @@ class ProfileController {
         // If update fails or not POST request, redirect back to profile
         header('Location: /profil');
         exit;
+    }
+
+    /**
+     * Show user's credit page
+     */
+    public function credit() {
+        // Check if user is logged in
+        \App\Helpers\Auth::requireLogin();
+        
+        // Set page title and current page
+        $pageTitle = 'EcoRide - Mes crédits';
+        $currentPage = 'profile-credit';
+        
+        // Get current user
+        $user = \App\Helpers\Auth::user();
+        
+        // Get full user profile with credit information
+        $user = $this->userModel->getById($user['id']);
+        
+        // Load required models
+        require_once BASE_PATH . '/app/models/CreditTransaction.php';
+        require_once BASE_PATH . '/app/models/CreditRequest.php';
+        
+        $transactionModel = new \App\Models\CreditTransaction();
+        $requestModel = new \App\Models\CreditRequest();
+        
+        // Get recent transactions
+        $transactions = $transactionModel->getByUserId($user['id'], null, 10);
+        
+        // Get credit requests
+        $creditRequests = $requestModel->getByUserId($user['id']);
+        
+        // Start output buffering
+        ob_start();
+        
+        // Include the view
+        require_once BASE_PATH . '/app/views/profile/credit.php';
+        
+        // Get the buffered content and clean the buffer
+        $content = ob_get_clean();
+        
+        // Include the layout template
+        require_once BASE_PATH . '/app/views/layouts/main.php';
+    }
+
+    /**
+     * Process credit request
+     */
+    public function requestCredit() {
+        // Check if user is logged in
+        \App\Helpers\Auth::requireLogin();
+        
+        // Set page title and current page
+        $pageTitle = 'EcoRide - Demande de crédit';
+        $currentPage = 'profile-credit';
+        
+        // Get current user
+        $user = \App\Helpers\Auth::user();
+        
+        // Get full user profile with credit information
+        $user = $this->userModel->getById($user['id']);
+        
+        // Load required models
+        require_once BASE_PATH . '/app/models/CreditRequest.php';
+        $requestModel = new \App\Models\CreditRequest();
+        
+        $errors = [];
+        $success = null;
+        
+        // Process form submission
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Get form data
+            $amount = isset($_POST['amount']) ? (float)$_POST['amount'] : 0;
+            $reason = $_POST['reason'] ?? '';
+            
+            // Validate amount
+            if ($amount <= 0) {
+                $errors[] = 'Le montant doit être supérieur à 0';
+            }
+            
+            if ($amount < 10) {
+                $errors[] = 'Le montant minimum est de 10€';
+            }
+            
+            if ($amount > 1000) {
+                $errors[] = 'Le montant maximum est de 1000€';
+            }
+            
+            // Check if user has pending requests
+            $pendingRequests = $requestModel->getAll('pending', $user['id']);
+            if (!empty($pendingRequests)) {
+                $errors[] = 'Vous avez déjà une demande de crédit en attente';
+            }
+            
+            if (empty($errors)) {
+                // Create credit request
+                $requestId = $requestModel->create($user['id'], $amount, $reason);
+                
+                if ($requestId) {
+                    $success = 'Votre demande de crédit a été envoyée avec succès. Un administrateur l\'examinera prochainement.';
+                } else {
+                    $errors[] = 'Une erreur est survenue lors de la création de la demande';
+                }
+            }
+        }
+        
+        // Load transactions and requests for the view
+        require_once BASE_PATH . '/app/models/CreditTransaction.php';
+        $transactionModel = new \App\Models\CreditTransaction();
+        
+        // Get recent transactions
+        $transactions = $transactionModel->getByUserId($user['id'], null, 10);
+        
+        // Get credit requests
+        $creditRequests = $requestModel->getByUserId($user['id']);
+        
+        // Start output buffering
+        ob_start();
+        
+        // Include the view
+        require_once BASE_PATH . '/app/views/profile/credit.php';
+        
+        // Get the buffered content and clean the buffer
+        $content = ob_get_clean();
+        
+        // Include the layout template
+        require_once BASE_PATH . '/app/views/layouts/main.php';
     }
 }
