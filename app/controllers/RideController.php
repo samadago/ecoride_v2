@@ -74,6 +74,11 @@ class RideController {
             exit;
         }
 
+        // Set a default status if not present
+        if (!isset($ride['status']) || empty($ride['status'])) {
+            $ride['status'] = 'pending';
+        }
+
         // Start output buffering
         ob_start();
         
@@ -116,6 +121,22 @@ class RideController {
             $price = $_POST['price'] ?? '';
             $estimatedArrivalTime = $_POST['estimated_arrival_time'] ?? '';
             $ecoFriendly = isset($_POST['eco_friendly']) ? 1 : 0;
+            
+            // Get coordinates if provided by the autocomplete
+            $departureCoords = $_POST['departure_location_coords'] ?? '';
+            $arrivalCoords = $_POST['arrival_location_coords'] ?? '';
+            
+            // Prepare description with coordinates if available
+            $description = '';
+            if (!empty($departureCoords) || !empty($arrivalCoords)) {
+                $description = "Coordonnées:\n";
+                if (!empty($departureCoords)) {
+                    $description .= "Départ: " . $departureCoords . "\n";
+                }
+                if (!empty($arrivalCoords)) {
+                    $description .= "Arrivée: " . $arrivalCoords;
+                }
+            }
 
             // Validate form data
             if (empty($departureLocation)) {
@@ -146,6 +167,7 @@ class RideController {
                 $rideModel->price = $price;
                 $rideModel->seats_available = $seatsAvailable;
                 $rideModel->eco_friendly = $ecoFriendly;
+                $rideModel->description = $description;
                 $rideModel->save();
 
                 // Redirect to rides list

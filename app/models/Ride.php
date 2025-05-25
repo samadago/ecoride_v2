@@ -89,12 +89,13 @@ class Ride {
                r.available_seats as seats_available,
                (r.available_seats - COALESCE((SELECT COUNT(*) FROM bookings b WHERE b.ride_id = r.id AND b.status = 'confirmed'), 0)) as remaining_seats,
                v.brand as vehicle_type,
-               v.eco_friendly
+               v.eco_friendly,
+               r.status
                FROM rides r 
                JOIN users u ON r.driver_id = u.id 
                JOIN vehicles v ON r.vehicle_id = v.id
                WHERE r.id = ? 
-               GROUP BY r.id, u.first_name, u.last_name, u.email, v.brand, v.eco_friendly, u.profile_image
+               GROUP BY r.id, u.first_name, u.last_name, u.email, v.brand, v.eco_friendly, u.profile_image, r.status
                LIMIT 1";
         return $this->db->fetch($sql, [$id]);
     }
@@ -229,5 +230,133 @@ class Ride {
                GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly
                ORDER BY r.departure_time ASC";
         return $this->db->fetchAll($sql, [$userId]);
+    }
+
+    /**
+     * Get total number of rides
+     * 
+     * @return int
+     */
+    public function getTotalRides() {
+        $sql = "SELECT COUNT(*) as total FROM rides";
+        $result = $this->db->fetch($sql);
+        return $result ? (int)$result['total'] : 0;
+    }
+
+    /**
+     * Count rides by status
+     * 
+     * @param string $status
+     * @return int
+     */
+    public function countRidesByStatus($status) {
+        $sql = "SELECT COUNT(*) as total FROM rides WHERE status = ?";
+        $result = $this->db->fetch($sql, [$status]);
+        return $result ? (int)$result['total'] : 0;
+    }
+
+    /**
+     * Get all rides with details for admin panel
+     * 
+     * @return array
+     */
+    public function getAllRidesWithDetails() {
+        $sql = "SELECT r.*, 
+                    u.first_name AS driver_first_name, 
+                    u.last_name AS driver_last_name,
+                    v.brand AS vehicle_brand, 
+                    v.model AS vehicle_model,
+                    (SELECT COUNT(*) FROM bookings WHERE ride_id = r.id AND status != 'cancelled') AS booking_count
+                FROM rides r
+                JOIN users u ON r.driver_id = u.id
+                JOIN vehicles v ON r.vehicle_id = v.id
+                ORDER BY r.departure_time DESC";
+        
+        return $this->db->fetchAll($sql);
+    }
+
+    /**
+     * Delete a ride
+     * 
+     * @param int $rideId
+     * @return bool
+     */
+    public function deleteRide($rideId) {
+        try {
+            $sql = "DELETE FROM rides WHERE id = ?";
+            return $this->db->query($sql, [$rideId]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update ride status
+     * 
+     * @param int $rideId
+     * @param string $status
+     * @return bool
+     */
+    public function updateRideStatus($rideId, $status) {
+        if (!in_array($status, ['pending', 'ongoing', 'completed', 'cancelled'])) {
+            return false;
+        }
+        
+        try {
+            $sql = "UPDATE rides SET status = ? WHERE id = ?";
+            return $this->db->query($sql, [$status, $rideId]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Complete a ride
+     * 
+     * @param int $rideId Ride ID
+     * @param int $driverId Driver ID to verify
+     * @return bool Success status
+     */
+    public function completeRide($rideId, $driverId) {
+        try {
+            // First verify this driver is assigned to this ride
+            $ride = $this->getById($rideId);
+            if (!$ride || $ride['driver_id'] != $driverId) {
+                return false;
+            }
+            
+            // Update ride status
+            $sql = "UPDATE rides SET status = 'completed', updated_at = NOW() WHERE id = ? AND driver_id = ?";
+            return $this->db->query($sql, [$rideId, $driverId]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Cancel a ride
+     * 
+     * @param int $rideId Ride ID
+     * @param int $userId User ID (must be the driver)
+     * @return bool Success status
+     */
+    public function cancelRide($rideId, $userId) {
+        try {
+            // First verify this user is the driver of this ride
+            $ride = $this->getById($rideId);
+            if (!$ride || $ride['driver_id'] != $userId) {
+                return false;
+            }
+            
+            // Update ride status
+            $sql = "UPDATE rides SET status = 'cancelled', updated_at = NOW() WHERE id = ? AND driver_id = ?";
+            return $this->db->query($sql, [$rideId, $userId]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 }

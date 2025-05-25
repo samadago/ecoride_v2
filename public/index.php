@@ -67,7 +67,7 @@ spl_autoload_register(function ($class) {
 });
 
 // Load configuration
-$routes = require_once BASE_PATH . '/app/config/routes.php';
+$routes = require_once BASE_PATH . '/app/config/routes_new.php';
 
 // Before loading controllers, preload all models and helpers
 $modelFiles = glob(BASE_PATH . '/app/models/*.php');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 use App\Config\Database;
+use PDOException;
 
 class Vehicle {
     private $db;
@@ -10,48 +11,168 @@ class Vehicle {
         $this->db = Database::getInstance();
     }
 
+    /**
+     * Create a new vehicle
+     * 
+     * @param array $data Vehicle data
+     * @return bool|int False on failure, vehicle ID on success
+     */
     public function create($data) {
-        $sql = "INSERT INTO vehicles (user_id, brand, model, year, eco_friendly, created_at, updated_at) 
-                VALUES (:user_id, :brand, :model, :year, :eco_friendly, NOW(), NOW())";
+        $sql = "INSERT INTO vehicles (user_id, brand, model, year, color, license_plate, eco_friendly, seats) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
-        return $this->db->query($sql, [
-            'user_id' => $data['user_id'],
-            'brand' => $data['brand'],
-            'model' => $data['model'],
-            'year' => $data['year'],
-            'eco_friendly' => isset($data['eco_friendly']) ? 1 : 0
-        ]);
+        try {
+            $this->db->query($sql, [
+                $data['user_id'],
+                $data['brand'],
+                $data['model'],
+                $data['year'],
+                $data['color'] ?? null,
+                $data['license_plate'],
+                $data['eco_friendly'] ?? false,
+                $data['seats']
+            ]);
+            
+            return $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 
+    /**
+     * Get a vehicle by ID
+     * 
+     * @param int $id Vehicle ID
+     * @return array|false Vehicle data or false if not found
+     */
+    public function getById($id) {
+        $sql = "SELECT * FROM vehicles WHERE id = ? LIMIT 1";
+        return $this->db->fetch($sql, [$id]);
+    }
+
+    /**
+     * Get all vehicles belonging to a user
+     * 
+     * @param int $userId User ID
+     * @return array Vehicles
+     */
+    public function getByUserId($userId) {
+        $sql = "SELECT * FROM vehicles WHERE user_id = ? ORDER BY created_at DESC";
+        return $this->db->fetchAll($sql, [$userId]);
+    }
+
+    /**
+     * Update vehicle details
+     * 
+     * @param int $id Vehicle ID
+     * @param array $data Vehicle data
+     * @return bool
+     */
     public function update($id, $data) {
-        $sql = "UPDATE vehicles 
-                SET brand = :brand, model = :model, year = :year, 
-                    eco_friendly = :eco_friendly, updated_at = NOW() 
-                WHERE id = :id AND user_id = :user_id";
+        $updates = [];
+        $params = [];
         
-        return $this->db->query($sql, [
-            'id' => $id,
-            'user_id' => $data['user_id'],
-            'brand' => $data['brand'],
-            'model' => $data['model'],
-            'year' => $data['year'],
-            'eco_friendly' => isset($data['eco_friendly']) ? 1 : 0
-        ]);
+        if (isset($data['brand'])) {
+            $updates[] = "brand = ?";
+            $params[] = $data['brand'];
+        }
+        if (isset($data['model'])) {
+            $updates[] = "model = ?";
+            $params[] = $data['model'];
+        }
+        if (isset($data['year'])) {
+            $updates[] = "year = ?";
+            $params[] = $data['year'];
+        }
+        if (isset($data['color'])) {
+            $updates[] = "color = ?";
+            $params[] = $data['color'];
+        }
+        if (isset($data['license_plate'])) {
+            $updates[] = "license_plate = ?";
+            $params[] = $data['license_plate'];
+        }
+        if (isset($data['eco_friendly'])) {
+            $updates[] = "eco_friendly = ?";
+            $params[] = $data['eco_friendly'];
+        }
+        if (isset($data['seats'])) {
+            $updates[] = "seats = ?";
+            $params[] = $data['seats'];
+        }
+        
+        if (empty($updates)) return true; // No updates to perform
+        
+        $sql = "UPDATE vehicles SET " . implode(", ", $updates) . " WHERE id = ?";
+        $params[] = $id;
+        
+        try {
+            return $this->db->query($sql, $params);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 
-    public function delete($id, $user_id) {
-        $sql = "DELETE FROM vehicles WHERE id = :id AND user_id = :user_id";
-        return $this->db->query($sql, ['id' => $id, 'user_id' => $user_id]);
+    /**
+     * Get total number of vehicles
+     * 
+     * @return int
+     */
+    public function getTotalVehicles() {
+        $sql = "SELECT COUNT(*) as total FROM vehicles";
+        $result = $this->db->fetch($sql);
+        return $result ? (int)$result['total'] : 0;
     }
 
-    public function findById($id) {
-        $sql = "SELECT * FROM vehicles WHERE id = :id";
-        return $this->db->fetch($sql, ['id' => $id]);
+    /**
+     * Get all vehicles with owner details
+     * 
+     * @return array
+     */
+    public function getAllVehiclesWithOwners() {
+        $sql = "SELECT v.*, 
+                    u.first_name AS owner_first_name, 
+                    u.last_name AS owner_last_name,
+                    u.email AS owner_email
+                FROM vehicles v
+                JOIN users u ON v.user_id = u.id
+                ORDER BY v.created_at DESC";
+        
+        return $this->db->fetchAll($sql);
     }
 
-    public function getByUserId($user_id) {
-        $sql = "SELECT * FROM vehicles WHERE user_id = :user_id ORDER BY created_at DESC";
-        return $this->db->fetchAll($sql, ['user_id' => $user_id]);
+    /**
+     * Delete a vehicle
+     * 
+     * @param int $vehicleId
+     * @return bool
+     */
+    public function deleteVehicle($vehicleId) {
+        try {
+            $sql = "DELETE FROM vehicles WHERE id = ?";
+            return $this->db->query($sql, [$vehicleId]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Toggle eco-friendly status
+     * 
+     * @param int $vehicleId
+     * @return bool
+     */
+    public function toggleEcoFriendly($vehicleId) {
+        try {
+            $sql = "UPDATE vehicles SET eco_friendly = NOT eco_friendly WHERE id = ?";
+            return $this->db->query($sql, [$vehicleId]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 
     public function getAll() {

@@ -32,6 +32,9 @@
                     <li class="nav-item" data-tab="booked-rides">
                         <i class="fas fa-ticket-alt"></i> Mes réservations
                     </li>
+                    <li class="nav-item" data-tab="credit-management">
+                        <i class="fas fa-coins"></i> Mon crédit
+                    </li>
                 </ul>
             </div>
     
@@ -180,6 +183,86 @@
                         <?php else: ?>
                             <p class="no-rides">Vous n'avez pas encore effectué de réservation.</p>
                         <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Credit Management Tab -->
+                <div class="tab-content" id="credit-management">
+                    <h2 class="section-title">Gestion de mon crédit</h2>
+                    <div class="profile-card">
+                        <div class="credit-balance">
+                            <h3>Solde actuel</h3>
+                            <div class="balance-amount"><?= number_format($profile['credit'], 2) ?> €</div>
+                        </div>
+                        
+                        <div class="credit-actions">
+                            <h3>Demander du crédit</h3>
+                            <form action="/profil/credit-request" method="post" class="credit-form">
+                                <div class="form-group">
+                                    <label for="amount">Montant (€)</label>
+                                    <input type="number" id="amount" name="amount" min="10" step="1" value="20" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Demander du crédit</button>
+                            </form>
+                        </div>
+                        
+                        <div class="credit-history">
+                            <h3>Historique des demandes</h3>
+                            <?php if (!empty($creditRequests)): ?>
+                                <table class="credit-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Montant</th>
+                                            <th>Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($creditRequests as $request): ?>
+                                            <tr>
+                                                <td><?= date('d/m/Y H:i', strtotime($request['created_at'])) ?></td>
+                                                <td><?= number_format($request['amount'], 2) ?> €</td>
+                                                <td>
+                                                    <span class="status-badge <?= strtolower($request['status']) ?>">
+                                                        <?= $request['status'] ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            <?php else: ?>
+                                <p class="no-history">Vous n'avez pas encore fait de demandes de crédit.</p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="credit-history">
+                            <h3>Historique des transactions</h3>
+                            <?php if (!empty($transactions)): ?>
+                                <table class="credit-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Montant</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($transactions as $transaction): ?>
+                                            <tr>
+                                                <td><?= date('d/m/Y H:i', strtotime($transaction['created_at'])) ?></td>
+                                                <td><?= htmlspecialchars($transaction['description']) ?></td>
+                                                <td class="<?= $transaction['amount'] > 0 ? 'positive' : 'negative' ?>">
+                                                    <?= number_format($transaction['amount'], 2) ?> €
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            <?php else: ?>
+                                <p class="no-history">Vous n'avez pas encore de transactions.</p>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>
