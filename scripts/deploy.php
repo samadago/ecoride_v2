@@ -47,6 +47,15 @@ try {
         runSqlFile($db, __DIR__ . '/../database/schema.sql');
     } else {
         echo "Database schema already exists.\n";
+        
+        // Check if users table is empty
+        $stmt = $db->query("SELECT COUNT(*) as count FROM users");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result['count'] == 0) {
+            echo "Users table is empty. Force creating database schema...\n";
+            runSqlFile($db, __DIR__ . '/../database/schema.sql');
+        }
     }
 } catch (PDOException $e) {
     echo "Error checking database schema: " . $e->getMessage() . "\n";
@@ -58,6 +67,8 @@ echo "Running migrations...\n";
 
 // Run all migration files from the migrations directory
 $migrations = glob(__DIR__ . '/../database/migrations/*.sql');
+natsort($migrations); // Sort migrations by name to ensure they run in order
+
 foreach ($migrations as $migration) {
     echo "Running migration: " . basename($migration) . "\n";
     try {
@@ -67,6 +78,27 @@ foreach ($migrations as $migration) {
     } catch (PDOException $e) {
         echo "Error running migration: " . $e->getMessage() . "\n";
     }
+}
+
+// Verify admin user exists
+echo "Verifying admin user exists...\n";
+try {
+    $stmt = $db->query("SELECT COUNT(*) as count FROM users WHERE is_admin = 1");
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($result['count'] == 0) {
+        echo "No admin user found. Creating default admin...\n";
+        $sql = "INSERT INTO users (email, password_hash, first_name, last_name, is_admin, credit, created_at) 
+                VALUES ('admin@ecoride.space', 
+                        '\$2y\$10\$DJB3DyZfUERjf2BJ2QsDZOu6Jz3zX.w2TBtY5rXVz.TJL0.5vvhMm', 
+                        'Admin', 'EcoRide', 1, 200.00, NOW())";
+        $db->exec($sql);
+        echo "Default admin user created (admin@ecoride.space / EcoRide@Admin2023!).\n";
+    } else {
+        echo "Admin user already exists.\n";
+    }
+} catch (PDOException $e) {
+    echo "Error verifying admin user: " . $e->getMessage() . "\n";
 }
 
 echo "Deployment completed successfully!\n"; 
