@@ -88,12 +88,31 @@ try {
     
     if ($result['count'] == 0) {
         echo "No admin user found. Creating default admin...\n";
+        
+        // Admin credentials
+        $adminEmail = 'admin@ecoride.space';
+        $adminPassword = 'EcoRide@Admin2023!';
+        
+        // Generate password hash dynamically
+        $passwordHash = password_hash($adminPassword, PASSWORD_DEFAULT);
+        
         $sql = "INSERT INTO users (email, password_hash, first_name, last_name, is_admin, credit, created_at) 
                 VALUES ('admin@ecoride.space', 
-                        '\$2y\$10\$DJB3DyZfUERjf2BJ2QsDZOu6Jz3zX.w2TBtY5rXVz.TJL0.5vvhMm', 
+                        ?, 
                         'Admin', 'EcoRide', 1, 200.00, NOW())";
-        $db->exec($sql);
+                        
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$passwordHash]);
+        
         echo "Default admin user created (admin@ecoride.space / EcoRide@Admin2023!).\n";
+        
+        // Test the password verification
+        echo "Testing password verification: ";
+        if (password_verify($adminPassword, $passwordHash)) {
+            echo "PASSED ✓\n";
+        } else {
+            echo "FAILED ✗\n";
+        }
     } else {
         echo "Admin user already exists.\n";
     }
