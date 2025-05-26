@@ -2,6 +2,8 @@ services:
   db:
     image: mysql:8.0
     container_name: ecoride_db
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASS}
       MYSQL_DATABASE: ${DB_NAME}
@@ -16,7 +18,7 @@ services:
       - db_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
       - ecoride-net
 
