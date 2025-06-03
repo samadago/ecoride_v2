@@ -23,9 +23,7 @@ services:
       - ecoride-net
 
   web:
-    #image: ghcr.io/samadago/ecoride_v2:latest
-    image: samadago/ecoride:dev
-    
+    image: ghcr.io/samadago/ecoride_v2:latest
     container_name: ecoride_web
     env_file:
       - .env
