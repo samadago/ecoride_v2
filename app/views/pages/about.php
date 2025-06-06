@@ -77,21 +77,21 @@
                 <div class="team-grid">
                     <div class="team-member">
                         
-                        <img src="/assets/images/directrice.jpg" alt="Membre de l'équipe" class="rounded-circle img-fluid" style="width: 100px; height: 50px; object-fit: cover;">
+                        <img src="/assets/images/directrice.jpg" alt="Membre de l'équipe" class="rounded-circle img-fluid" style="width: 150px; height: 200px; object-fit: cover;">
 
                         <h3>Sophie Martin</h3>
                         <p>Fondatrice & CEO</p>
                     </div>
                     <div class="team-member">
                         
-                        <img src="/assets/images/technicien.jpg" alt="Membre de l'équipe" class="rounded-circle img-fluid" style="width: 100px; height: 50px; object-fit: cover;">
+                        <img src="/assets/images/technicien.jpg" alt="Membre de l'équipe" class="rounded-circle img-fluid" style="width: 150px; height: 200px; object-fit: cover;">
 
                         <h3>Thomas Dubois</h3>
                         <p>Directeur Technique</p>
                     </div>
                     <div class="team-member">
                        
-                        <img src="/assets/images/marketing-fille.jpg" alt="Membre de l'équipe" class="rounded-circle img-fluid" style="width: 100x; height: 50px; object-fit: cover;">
+                        <img src="/assets/images/marketing-fille.jpg" alt="Membre de l'équipe" class="rounded-circle img-fluid" style="width: 150x; height: 200px; object-fit: cover;">
 
                         <h3>Emma Leclerc</h3>
                         <p>Responsable Marketing</p>
