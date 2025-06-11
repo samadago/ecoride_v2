@@ -6,7 +6,13 @@
     margin-bottom: 20px;
 }
 
-.autocomplete-container {
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-container,
+.autocomplete-dropdown {
     position: absolute;
     z-index: 1000;
     width: 100%;
@@ -18,8 +24,13 @@
     border-radius: 0 0 4px 4px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-top: -2px;
-    top: 100%; /* Ensure it appears below the input */
+    top: 100%;
     left: 0;
+    display: none;
+}
+
+.autocomplete-dropdown {
+    display: none;
 }
 
 .autocomplete-item {
@@ -29,12 +40,31 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #333 !important; /* Force dark text color */
+    font-size: 14px;
+    line-height: 1.4;
 }
 
 .autocomplete-item:hover {
     background-color: #f8f9fa;
+    color: #000 !important; /* Ensure text stays dark on hover */
 }
 
 .autocomplete-item:not(:last-child) {
     border-bottom: 1px solid #eee;
+}
+
+/* Specific override for hero section autocomplete */
+.hero .autocomplete-item,
+.hero .autocomplete-container .autocomplete-item,
+.hero .autocomplete-dropdown .autocomplete-item {
+    color: #333 !important;
+    text-shadow: none !important;
+}
+
+.hero .autocomplete-item:hover,
+.hero .autocomplete-container .autocomplete-item:hover,
+.hero .autocomplete-dropdown .autocomplete-item:hover {
+    color: #000 !important;
+    text-shadow: none !important;
 } 

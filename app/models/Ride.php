@@ -104,22 +104,40 @@ class Ride {
      * Search for rides
      * 
      * The search criteria are:
-     * - Departure location
-     * - Arrival location
-     * - Date of travel
+     * - Departure location (partial match)
+     * - Arrival location (partial match)
+     * - Date of travel (day-based search with flexible time)
      * 
      * The list of rides is ordered by departure time. 
      * The list of rides is filtered by the number of available seats.
-     * The list of rides is returned in a timerange of 1 hour from the departure time.(If the ride is passed the hour, it is not returned)
+     * Only returns rides that haven't departed yet.
      * 
      * @param string $departure Departure location
      * @param string $arrival Arrival location
-     * @param string $date Date of travel
+     * @param string $date Date of travel (can be date or datetime)
      * @return array
      */
     public function search($departure, $arrival, $date) {
+        // Clean the input parameters
+        $departure = trim($departure);
+        $arrival = trim($arrival);
+        $date = trim($date);
+        
+        // Convert datetime-local format to date if needed
+        $searchDate = null;
+        if (!empty($date)) {
+            if (strpos($date, 'T') !== false) {
+                // Full datetime provided - use it for more precise filtering
+                $searchDate = date('Y-m-d H:i:s', strtotime($date));
+            } else {
+                // Just date provided - search for that entire day
+                $searchDate = date('Y-m-d', strtotime($date));
+            }
+        }
+        
+        // Base SQL query
         $sql = "SELECT r.*,
-               CONCAT(u.first_name,'', u.last_name) as driver_name,
+               CONCAT(u.first_name, ' ', u.last_name) as driver_name,
                r.available_seats as seats_available,
                v.brand as vehicle_type,
                v.eco_friendly,
@@ -127,19 +145,140 @@ class Ride {
                FROM rides r
                JOIN users u ON r.driver_id = u.id
                JOIN vehicles v ON r.vehicle_id = v.id
-               WHERE r.departure_location =?
-               AND r.arrival_location =?
-               AND r.departure_time >=?
-               AND r.departure_time <= DATE_ADD(?, INTERVAL 1 HOUR)
-               AND r.available_seats > 0
-               GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly, u.profile_image
-               ORDER BY r.departure_time ASC";
+               WHERE r.available_seats > 0
+               AND r.status IN ('pending', 'ongoing')
+               AND r.departure_time > NOW()";
+        
+        $params = [];
+        
+        // Add departure location filter with partial matching
+        if (!empty($departure)) {
+            $sql .= " AND r.departure_location LIKE ?";
+            $params[] = '%' . $departure . '%';
+        }
+        
+        // Add arrival location filter with partial matching
+        if (!empty($arrival)) {
+            $sql .= " AND r.arrival_location LIKE ?";
+            $params[] = '%' . $arrival . '%';
+        }
+        
+        // Add date filter
+        if (!empty($searchDate)) {
+            if (strpos($date, 'T') !== false) {
+                // Specific datetime - find rides departing after this time
+                $sql .= " AND r.departure_time >= ?";
+                $params[] = $searchDate;
+            } else {
+                // Just date - find rides on this specific day
+                $sql .= " AND DATE(r.departure_time) = ?";
+                $params[] = $searchDate;
+            }
+        }
+        
+        // Group by ride to avoid duplicates and order by departure time
+        $sql .= " GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly, u.profile_image
+                 ORDER BY r.departure_time ASC";
 
-        return $this->db->fetchAll($sql, [$departure, $arrival, $date, $date]);
+        return $this->db->fetchAll($sql, $params);
     }
 
+    /**
+     * Flexible search for rides with optional filters
+     * 
+     * @param array $filters Array of search filters
+     * @return array
+     */
+    public function flexibleSearch($filters = []) {
+        // Base SQL query
+        $sql = "SELECT r.*,
+               CONCAT(u.first_name, ' ', u.last_name) as driver_name,
+               r.available_seats as seats_available,
+               v.brand as vehicle_type,
+               v.eco_friendly,
+               u.profile_image
+               FROM rides r
+               JOIN users u ON r.driver_id = u.id
+               JOIN vehicles v ON r.vehicle_id = v.id
+               WHERE r.available_seats > 0
+               AND r.status IN ('pending', 'ongoing')
+               AND r.departure_time > NOW()";
+        
+        $params = [];
+        
+        // Add departure location filter if provided
+        if (!empty($filters['departure'])) {
+            $sql .= " AND r.departure_location LIKE ?";
+            $params[] = '%' . trim($filters['departure']) . '%';
+        }
+        
+        // Add arrival location filter if provided
+        if (!empty($filters['arrival'])) {
+            $sql .= " AND r.arrival_location LIKE ?";
+            $params[] = '%' . trim($filters['arrival']) . '%';
+        }
+        
+        // Add date filter if provided
+        if (!empty($filters['date'])) {
+            $date = trim($filters['date']);
+            // Convert datetime-local format to date if needed
+            if (strpos($date, 'T') !== false) {
+                $date = date('Y-m-d', strtotime($date));
+            }
+            $sql .= " AND DATE(r.departure_time) = ?";
+            $params[] = $date;
+        }
+        
+        // Add price range filter if provided
+        if (!empty($filters['max_price'])) {
+            $sql .= " AND r.price <= ?";
+            $params[] = floatval($filters['max_price']);
+        }
+        
+        // Add minimum seats filter if provided
+        if (!empty($filters['min_seats'])) {
+            $sql .= " AND r.available_seats >= ?";
+            $params[] = intval($filters['min_seats']);
+        }
+        
+        // Add eco-friendly filter if requested
+        if (!empty($filters['eco_only'])) {
+            $sql .= " AND v.eco_friendly = 1";
+        }
+        
+        // Group by ride to avoid duplicates and order by departure time
+        $sql .= " GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly, u.profile_image
+                 ORDER BY r.departure_time ASC";
+        
+        return $this->db->fetchAll($sql, $params);
+    }
 
-    
+    /**
+     * Get upcoming rides (rides that haven't started yet)
+     * 
+     * @param int $limit Number of rides to return
+     * @return array
+     */
+    public function getUpcomingRides($limit = 10) {
+        $sql = "SELECT r.*,
+               CONCAT(u.first_name, ' ', u.last_name) as driver_name,
+               r.available_seats as seats_available,
+               v.brand as vehicle_type,
+               v.eco_friendly,
+               u.profile_image
+               FROM rides r
+               JOIN users u ON r.driver_id = u.id
+               JOIN vehicles v ON r.vehicle_id = v.id
+               WHERE r.available_seats > 0
+               AND r.status IN ('pending', 'ongoing')
+               AND r.departure_time > NOW()
+               GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly, u.profile_image
+               ORDER BY r.departure_time ASC
+               LIMIT ?";
+        
+        return $this->db->fetchAll($sql, [$limit]);
+    }
+
     /**
      * Create a new ride
      * 

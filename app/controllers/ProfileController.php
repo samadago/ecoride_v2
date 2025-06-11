@@ -90,15 +90,38 @@ class ProfileController {
                 $updateData['password'] = $_POST['password'];
             }
             
+            // Capture any output before attempting redirect
+            ob_start();
+            
             // Update profile
-            if ($this->userModel->updateProfile($userId, $updateData)) {
+            $updateResult = $this->userModel->updateProfile($userId, $updateData);
+            
+            // Clean any output that might have been generated
+            $output = ob_get_clean();
+            
+            // Log any output for debugging
+            if (!empty($output)) {
+                error_log("Profile update output: " . $output);
+            }
+            
+            if ($updateResult) {
+                // Set session success message
+                $_SESSION['profile_success'] = 'Profil mis à jour avec succès';
+                
                 // Redirect to profile page after successful update
+                header('Location: /profil');
+                exit;
+            } else {
+                // Set session error message
+                $_SESSION['profile_error'] = 'Erreur lors de la mise à jour du profil. Veuillez réessayer.';
+                
+                // Redirect back to profile
                 header('Location: /profil');
                 exit;
             }
         }
         
-        // If update fails or not POST request, redirect back to profile
+        // If not POST request, redirect back to profile
         header('Location: /profil');
         exit;
     }

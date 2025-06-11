@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle ?? 'EcoRide - Covoiturage écologique'; ?></title>
     <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/autocomplete.css">
     <link rel="stylesheet" href="/assets/css/carousel.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -98,5 +99,21 @@
 
     <script src="/assets/js/scripts.js"></script>
     <script src="/assets/js/carousel.js"></script>
+    <script src="/assets/js/city-autocomplete.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize autocomplete for home page search form (if elements exist)
+        if (document.getElementById('depart') && document.getElementById('arrivee')) {
+            initCityAutocomplete('depart', 'depart-coords', 'depart-dropdown');
+            initCityAutocomplete('arrivee', 'arrivee-coords', 'arrivee-dropdown');
+        }
+        
+        // Initialize autocomplete for rides page compact search form (if elements exist)
+        if (document.getElementById('depart-compact') && document.getElementById('arrivee-compact')) {
+            initCityAutocomplete('depart-compact', 'depart-compact-coords', 'depart-compact-dropdown');
+            initCityAutocomplete('arrivee-compact', 'arrivee-compact-coords', 'arrivee-compact-dropdown');
+        }
+    });
+    </script>
 </body>
 </html>

@@ -20,17 +20,43 @@ class RideController {
         // Create an instance of the Ride model
         $rideModel = new \App\Models\Ride();
         
-        // Get all rides with vehicle information
-        $rides = $rideModel->getAllWithVehicles();
-        
         // Get search parameters if any
         $departure = $_GET['departure'] ?? '';
         $arrival = $_GET['arrival'] ?? '';
-        $date = $_GET['date'] ?? date('Y-m-d');
+        $date = $_GET['date'] ?? '';
         
-        // If search parameters are provided, filter the rides
-        if (!empty($departure) && !empty($arrival)) {
+        // Initialize variables for the view
+        $searchPerformed = false;
+        $searchResults = [];
+        
+        // If search parameters are provided, perform search
+        if (!empty($departure) || !empty($arrival) || !empty($date)) {
+            $searchPerformed = true;
             $rides = $rideModel->search($departure, $arrival, $date);
+            
+            // If no results found with search criteria, try a broader search
+            if (empty($rides) && (!empty($departure) || !empty($arrival))) {
+                // Try search with just one location if both were provided
+                if (!empty($departure) && !empty($arrival)) {
+                    $rides = $rideModel->search($departure, '', $date);
+                    if (empty($rides)) {
+                        $rides = $rideModel->search('', $arrival, $date);
+                    }
+                }
+            }
+        } else {
+            // Get all rides if no search parameters
+            $rides = $rideModel->getAllWithVehicles();
+        }
+        
+        // For debugging - can be removed in production
+        if ($searchPerformed && isset($_GET['debug'])) {
+            echo "<pre>Search Debug:\n";
+            echo "Departure: " . htmlspecialchars($departure) . "\n";
+            echo "Arrival: " . htmlspecialchars($arrival) . "\n";
+            echo "Date: " . htmlspecialchars($date) . "\n";
+            echo "Results found: " . count($rides) . "\n";
+            echo "</pre>";
         }
         
         // Start output buffering

@@ -20,13 +20,21 @@
                 <div class="input-icon">
                     <i class="fas fa-map-marker-alt"></i>
                 </div>
-                <input type="text" id="depart" placeholder="Adresse de départ" required>
+                <div class="autocomplete-wrapper">
+                    <input type="text" id="depart" class="autocomplete-input" placeholder="Adresse de départ" required>
+                    <input type="hidden" id="depart-coords" name="departure_coords">
+                    <div class="autocomplete-dropdown" id="depart-dropdown"></div>
+                </div>
             </div>
             <div class="form-group">
                 <div class="input-icon">
                     <i class="fas fa-map-marker"></i>
                 </div>
-                <input type="text" id="arrivee" placeholder="Adresse d'arrivée" required>
+                <div class="autocomplete-wrapper">
+                    <input type="text" id="arrivee" class="autocomplete-input" placeholder="Adresse d'arrivée" required>
+                    <input type="hidden" id="arrivee-coords" name="arrival_coords">
+                    <div class="autocomplete-dropdown" id="arrivee-dropdown"></div>
+                </div>
             </div>
             <div class="form-group">
                 <div class="input-icon">

@@ -110,19 +110,50 @@ class User {
         // Handle profile image upload
         if (isset($data['profile_image']) && $data['profile_image']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/uploads/';
+            
+            // Create upload directory if it doesn't exist
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0755, true)) {
+                    error_log("Failed to create upload directory: " . $uploadDir);
+                    return false;
+                }
+            }
+            
+            // Check if directory is writable
+            if (!is_writable($uploadDir)) {
+                error_log("Upload directory is not writable: " . $uploadDir);
+                return false;
+            }
+            
             $fileExtension = strtolower(pathinfo($data['profile_image']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            
+            // Validate file extension
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                error_log("Invalid file extension: " . $fileExtension);
+                return false;
+            }
+            
             $newFileName = uniqid('profile_') . '.' . $fileExtension;
             $uploadFile = $uploadDir . $newFileName;
             
             if (move_uploaded_file($data['profile_image']['tmp_name'], $uploadFile)) {
+                // Set proper file permissions
+                chmod($uploadFile, 0644);
+                
                 $updates[] = "profile_image = ?";
                 $params[] = 'assets/uploads/' . $newFileName;
                 
                 // Delete old profile image if exists
                 if ($currentUser['profile_image']) {
                     $oldFile = $_SERVER['DOCUMENT_ROOT'] . '/' . $currentUser['profile_image'];
-                    if (file_exists($oldFile)) unlink($oldFile);
+                    if (file_exists($oldFile)) {
+                        unlink($oldFile);
+                    }
                 }
+            } else {
+                error_log("Failed to move uploaded file to: " . $uploadFile);
+                return false;
             }
         }
 
