@@ -7,7 +7,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing city autocomplete');
     
-    // Initialize autocomplete for departure and arrival locations
+    // Initialize autocomplete for departure and arrival locations (original format)
     initCityAutocomplete('departure_location');
     initCityAutocomplete('arrival_location');
 });
@@ -16,8 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialize city autocomplete for a specific input field
  * 
  * @param {string} inputId - The ID of the input field
+ * @param {string} coordsId - Optional: The ID of the coordinates hidden input
+ * @param {string} dropdownId - Optional: The ID of the dropdown container
  */
-function initCityAutocomplete(inputId) {
+function initCityAutocomplete(inputId, coordsId = null, dropdownId = null) {
     const input = document.getElementById(inputId);
     if (!input) {
         console.error(`Input with ID ${inputId} not found`);
@@ -26,21 +28,40 @@ function initCityAutocomplete(inputId) {
     
     console.log(`Initializing autocomplete for ${inputId}`);
     
-    // Create autocomplete container
-    const autocompleteContainer = document.createElement('div');
-    autocompleteContainer.className = 'autocomplete-container';
-    autocompleteContainer.style.display = 'none';
-    input.parentNode.insertBefore(autocompleteContainer, input.nextSibling);
+    // Get or create autocomplete container
+    let autocompleteContainer;
+    if (dropdownId) {
+        autocompleteContainer = document.getElementById(dropdownId);
+        if (!autocompleteContainer) {
+            console.error(`Dropdown container with ID ${dropdownId} not found`);
+            return;
+        }
+    } else {
+        // Create autocomplete container (legacy behavior)
+        autocompleteContainer = document.createElement('div');
+        autocompleteContainer.className = 'autocomplete-container';
+        autocompleteContainer.style.display = 'none';
+        input.parentNode.insertBefore(autocompleteContainer, input.nextSibling);
+    }
     
-    // Create coordinates hidden inputs if they don't exist
-    let coordsInput = document.getElementById(inputId + '_coords');
-    if (!coordsInput) {
-        console.log(`Creating hidden input for ${inputId}_coords`);
-        coordsInput = document.createElement('input');
-        coordsInput.type = 'hidden';
-        coordsInput.id = inputId + '_coords';
-        coordsInput.name = inputId + '_coords';
-        input.parentNode.insertBefore(coordsInput, input.nextSibling);
+    // Get or create coordinates hidden input
+    let coordsInput;
+    if (coordsId) {
+        coordsInput = document.getElementById(coordsId);
+        if (!coordsInput) {
+            console.error(`Coordinates input with ID ${coordsId} not found`);
+        }
+    } else {
+        // Create coordinates hidden input (legacy behavior)
+        coordsInput = document.getElementById(inputId + '_coords');
+        if (!coordsInput) {
+            console.log(`Creating hidden input for ${inputId}_coords`);
+            coordsInput = document.createElement('input');
+            coordsInput.type = 'hidden';
+            coordsInput.id = inputId + '_coords';
+            coordsInput.name = inputId + '_coords';
+            input.parentNode.insertBefore(coordsInput, input.nextSibling);
+        }
     }
     
     let debounceTimer;
@@ -62,7 +83,7 @@ function initCityAutocomplete(inputId) {
         
         // Debounce the API call to avoid too many requests
         debounceTimer = setTimeout(function() {
-            fetchCitySuggestions(query, autocompleteContainer, input);
+            fetchCitySuggestions(query, autocompleteContainer, input, coordsInput);
         }, 300);
     });
     
@@ -77,7 +98,7 @@ function initCityAutocomplete(inputId) {
     input.addEventListener('focus', function() {
         const query = this.value.trim();
         if (query.length >= 2) {
-            fetchCitySuggestions(query, autocompleteContainer, input);
+            fetchCitySuggestions(query, autocompleteContainer, input, coordsInput);
         }
     });
 }
@@ -88,8 +109,9 @@ function initCityAutocomplete(inputId) {
  * @param {string} query - The search query
  * @param {HTMLElement} container - The container for suggestions
  * @param {HTMLElement} input - The input field
+ * @param {HTMLElement} coordsInput - The coordinates input field
  */
-function fetchCitySuggestions(query, container, input) {
+function fetchCitySuggestions(query, container, input, coordsInput = null) {
     console.log(`Fetching suggestions for: ${query}`);
     
     // Use the direct API endpoint instead of the routed one
@@ -107,7 +129,7 @@ function fetchCitySuggestions(query, container, input) {
             }
             
             console.log(`Got ${cities.length} suggestions`);
-            displayCitySuggestions(cities, container, input);
+            displayCitySuggestions(cities, container, input, coordsInput);
         })
         .catch(error => {
             console.error('Error fetching city suggestions:', error);
@@ -120,14 +142,20 @@ function fetchCitySuggestions(query, container, input) {
  * @param {Array} cities - The cities to display
  * @param {HTMLElement} container - The container for suggestions
  * @param {HTMLElement} input - The input field
+ * @param {HTMLElement} coordsInput - The coordinates input field
  */
-function displayCitySuggestions(cities, container, input) {
+function displayCitySuggestions(cities, container, input, coordsInput = null) {
     // Clear previous suggestions
     container.innerHTML = '';
     
     if (cities.length === 0) {
         container.style.display = 'none';
         return;
+    }
+    
+    // Set appropriate class for styling
+    if (!container.className.includes('autocomplete-container') && !container.className.includes('autocomplete-dropdown')) {
+        container.className += ' autocomplete-dropdown';
     }
     
     // Create a suggestion for each city
@@ -141,11 +169,15 @@ function displayCitySuggestions(cities, container, input) {
             console.log(`Selected city: ${city.fullName}`);
             input.value = city.fullName;
             
-            // Store coordinates in hidden input
-            const coordsInput = document.getElementById(input.id + '_coords');
-            if (coordsInput && city.coordinates) {
-                coordsInput.value = JSON.stringify(city.coordinates);
-                console.log(`Stored coordinates: ${coordsInput.value}`);
+            // Store coordinates in the provided coordinates input or fallback to default
+            let targetCoordsInput = coordsInput;
+            if (!targetCoordsInput) {
+                targetCoordsInput = document.getElementById(input.id + '_coords');
+            }
+            
+            if (targetCoordsInput && city.coordinates) {
+                targetCoordsInput.value = JSON.stringify(city.coordinates);
+                console.log(`Stored coordinates: ${targetCoordsInput.value}`);
             }
             
             container.style.display = 'none';

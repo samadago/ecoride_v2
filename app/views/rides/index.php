@@ -15,19 +15,27 @@ $pageTitle = 'EcoRide - Covoiturages';
                 <div class="input-icon">
                     <i class="fas fa-map-marker-alt"></i>
                 </div>
-                <input type="text" name="departure" id="depart-compact" placeholder="Départ" value="<?= htmlspecialchars($departure ?? '') ?>" required>
+                <div class="autocomplete-wrapper">
+                    <input type="text" name="departure" id="depart-compact" class="autocomplete-input" placeholder="Départ" value="<?= htmlspecialchars($departure ?? '') ?>">
+                    <input type="hidden" name="departure_coords" id="depart-compact-coords">
+                    <div class="autocomplete-dropdown" id="depart-compact-dropdown"></div>
+                </div>
             </div>
             <div class="form-group">
                 <div class="input-icon">
                     <i class="fas fa-map-marker"></i>
                 </div>
-                <input type="text" name="arrival" id="arrivee-compact" placeholder="Arrivée" value="<?= htmlspecialchars($arrival ?? '') ?>" required>
+                <div class="autocomplete-wrapper">
+                    <input type="text" name="arrival" id="arrivee-compact" class="autocomplete-input" placeholder="Arrivée" value="<?= htmlspecialchars($arrival ?? '') ?>">
+                    <input type="hidden" name="arrival_coords" id="arrivee-compact-coords">
+                    <div class="autocomplete-dropdown" id="arrivee-compact-dropdown"></div>
+                </div>
             </div>
             <div class="form-group">
                 <div class="input-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
-                <input type="datetime-local" name="date" id="date-compact" value="<?= htmlspecialchars($date ?? '') ?>" required>
+                <input type="datetime-local" name="date" id="date-compact" value="<?= htmlspecialchars($date ?? '') ?>">
             </div>
             <button type="submit" class="btn btn-primary">Rechercher</button>
         </form>
