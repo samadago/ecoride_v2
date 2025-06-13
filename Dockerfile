@@ -38,6 +38,12 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod 644 /var/www/html/app/config/routes.php \
     && chmod -R +x /var/www/html/app
 
+# Create a startup script to fix permissions on container start
+RUN echo '#!/bin/bash\n\
+chown -R www-data:www-data /var/www/html/public/assets/uploads\n\
+chmod -R 755 /var/www/html/public/assets/uploads\n\
+apache2-foreground' > /start.sh \
+    && chmod +x /start.sh
 
 # Apache Virtual Host configuration
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
@@ -56,4 +62,4 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
 
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+CMD ["/start.sh"]
