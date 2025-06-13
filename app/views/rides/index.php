@@ -93,7 +93,7 @@ $pageTitle = 'EcoRide - Covoiturages';
                             </div>
                             <div class="seats-info">
                                 <i class="fas fa-user"></i>
-                                <span><?= htmlspecialchars($ride['seats_available']) ?> places</span>
+                                <span><?= htmlspecialchars($ride['remaining_seats'] ?? $ride['seats_available']) ?> places restantes</span>
                             </div>
                         </div>
                         <div class="ride-price-action">

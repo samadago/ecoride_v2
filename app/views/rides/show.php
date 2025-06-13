@@ -34,6 +34,14 @@
                 </div>
                 
                 <?php
+                // Define status labels first for use throughout the page
+                $statusLabels = [
+                    'pending' => 'En attente',
+                    'ongoing' => 'En cours',
+                    'completed' => 'Terminé',
+                    'cancelled' => 'Annulé'
+                ];
+                
                 // Only show status section if user is logged in and has a relationship with this ride
                 $isLoggedIn = \App\Helpers\Auth::isLoggedIn();
                 $currentUser = $isLoggedIn ? \App\Helpers\Auth::user() : null;
@@ -58,15 +66,7 @@
                     <div class="status-display">
                         <span class="status-label">Statut actuel:</span>
                         <span id="ride-status" class="ride-status status-<?= $ride['status'] ?? 'pending' ?>">
-                            <?php 
-                            $statusLabels = [
-                                'pending' => 'En attente',
-                                'ongoing' => 'En cours',
-                                'completed' => 'Terminé',
-                                'cancelled' => 'Annulé'
-                            ];
-                            echo $statusLabels[$ride['status'] ?? 'pending'];
-                            ?>
+                            <?= $statusLabels[$ride['status'] ?? 'pending'] ?>
                         </span>
                     </div>
                     
@@ -112,7 +112,7 @@
                         <div class="ride-options">
                             <div class="option">
                                 <i class="fas fa-users"></i>
-                                <span><?= (int)$ride['seats_available'] ?> place(s) disponible(s)</span>
+                                <span><?= (int)$ride['remaining_seats'] ?> place(s) restante(s)</span>
                             </div>
                             <div class="option">
                                 <i class="fas fa-car"></i>
@@ -144,7 +144,7 @@
                             </div>
                         </div>
                         
-                        <?php if (\App\Helpers\Auth::isLoggedIn() && \App\Helpers\Auth::user()['id'] != $ride['user_id'] && ($ride['status'] == 'pending')): ?>
+                        <?php if (\App\Helpers\Auth::isLoggedIn() && \App\Helpers\Auth::user()['id'] != $ride['user_id'] && ($ride['status'] == 'pending') && $ride['remaining_seats'] > 0): ?>
                         <div class="booking-section">
                             <h3>Réserver</h3>
                             <form class="booking-form" action="/reserver-trajet" method="post">
@@ -152,7 +152,7 @@
                                 <div class="form-group">
                                     <label for="seats_booked">Nombre de places</label>
                                     <select id="seats_booked" name="seats_booked" required>
-                                        <?php for ($i = 1; $i <= min(4, $ride['seats_available']); $i++): ?>
+                                        <?php for ($i = 1; $i <= min(4, $ride['remaining_seats']); $i++): ?>
                                             <option value="<?= $i ?>"><?= $i ?></option>
                                         <?php endfor; ?>
                                     </select>
@@ -163,6 +163,10 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary">Réserver</button>
                             </form>
+                        </div>
+                        <?php elseif (\App\Helpers\Auth::isLoggedIn() && \App\Helpers\Auth::user()['id'] != $ride['user_id'] && ($ride['status'] == 'pending') && $ride['remaining_seats'] <= 0): ?>
+                        <div class="booking-closed">
+                            <p>Ce trajet est complet, aucune place disponible.</p>
                         </div>
                         <?php elseif (!\App\Helpers\Auth::isLoggedIn()): ?>
                         <div class="login-prompt">

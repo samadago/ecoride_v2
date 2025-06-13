@@ -250,7 +250,7 @@ class User {
     }
     
     /**
-     * Get user's rating
+     * Get user's rating (only approved ratings)
      * 
      * @param int $userId User ID
      * @return array Rating data including average and count
@@ -260,7 +260,7 @@ class User {
                 COALESCE(AVG(rating), 0) AS average_rating, 
                 COUNT(*) as rating_count
             FROM ratings
-            WHERE to_user_id = :user_id";
+            WHERE to_user_id = :user_id AND status = 'approved'";
             
         return $this->db->fetch($sql, ['user_id' => $userId]);
     }

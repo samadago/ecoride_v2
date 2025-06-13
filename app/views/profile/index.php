@@ -133,9 +133,50 @@
                                                 <span><i class="fas fa-calendar"></i> <?= htmlspecialchars($ride['departure_time']) ?></span>
                                                 <span><i class="fas fa-euro-sign"></i> <?= htmlspecialchars($ride['price']) ?></span>
                                                 <span><i class="fas fa-user"></i> <?= htmlspecialchars($ride['available_seats']) ?> places</span>
+                                                <span class="ride-status <?= strtolower($ride['status'] ?? 'pending') ?>">
+                                                    <i class="fas fa-circle"></i> <?= ucfirst($ride['status'] ?? 'En attente') ?>
+                                                </span>
                                             </div>
                                         </div>
-                                        <a href="/detail-covoiturage?id=<?= $ride['id'] ?>" class="btn btn-primary">Voir détails</a>
+                                        <div class="ride-actions">
+                                            <a href="/detail-covoiturage?id=<?= $ride['id'] ?>" class="btn btn-secondary">Voir détails</a>
+                                            
+                                            <?php if (($ride['status'] ?? '') === 'completed'): ?>
+                                                <?php
+                                                // Get passengers for this completed ride to allow driver to review them
+                                                $bookingModel = new \App\Models\Booking();
+                                                $rideBookings = $bookingModel->getByDriverId($profile['id']);
+                                                $completedBookings = array_filter($rideBookings, function($b) use ($ride) {
+                                                    return $b['ride_id'] == $ride['id'] && $b['status'] === 'completed';
+                                                });
+                                                ?>
+                                                
+                                                <?php if (!empty($completedBookings)): ?>
+                                                    <div class="passenger-reviews">
+                                                        <small>Évaluer les passagers:</small>
+                                                        <?php foreach ($completedBookings as $booking): ?>
+                                                            <?php
+                                                            // Check if driver has already reviewed this passenger
+                                                            require_once BASE_PATH . '/app/models/Rating.php';
+                                                            $ratingModel = new \App\Models\Rating();
+                                                            $hasReviewed = $ratingModel->hasRated($profile['id'], $booking['passenger_id'], $booking['id']);
+                                                            ?>
+                                                            
+                                                            <?php if (!$hasReviewed): ?>
+                                                                <a href="/avis/creer?ride_id=<?= $ride['id'] ?>&booking_id=<?= $booking['id'] ?>" 
+                                                                   class="btn btn-outline-warning btn-sm">
+                                                                    <i class="fas fa-star"></i> <?= htmlspecialchars($booking['passenger_first_name'] ?? 'Passager') ?>
+                                                                </a>
+                                                            <?php else: ?>
+                                                                <span class="reviewed-badge">
+                                                                    <i class="fas fa-check"></i> <?= htmlspecialchars($booking['passenger_first_name'] ?? 'Passager') ?> évalué
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -175,6 +216,31 @@
                                                     <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
                                                     <button type="submit" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')">Annuler</button>
                                                 </form>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($booking['status'] === 'completed'): ?>
+                                                <?php
+                                                // Check if passenger has already reviewed the driver
+                                                require_once BASE_PATH . '/app/models/Rating.php';
+                                                $ratingModel = new \App\Models\Rating();
+                                                // Get driver ID from the ride
+                                                $rideModel = new \App\Models\Ride();
+                                                $ride = $rideModel->getById($booking['ride_id']);
+                                                if ($ride) {
+                                                    $hasReviewed = $ratingModel->hasRated($profile['id'], $ride['driver_id'], $booking['id']);
+                                                }
+                                                ?>
+                                                
+                                                <?php if (!$hasReviewed && isset($ride)): ?>
+                                                    <a href="/avis/creer?ride_id=<?= $booking['ride_id'] ?>&booking_id=<?= $booking['id'] ?>" 
+                                                       class="btn btn-warning">
+                                                        <i class="fas fa-star"></i> Évaluer le conducteur
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="reviewed-badge">
+                                                        <i class="fas fa-check"></i> Conducteur évalué
+                                                    </span>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -276,6 +342,78 @@
     // Include the layout template
     require_once BASE_PATH . '/app/views/layouts/main.php';
     ?>
+    
+    <style>
+    /* Review-specific styles */
+    .reviewed-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        background: #d4edda;
+        color: #155724;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .passenger-reviews {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #eee;
+    }
+    
+    .passenger-reviews small {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #666;
+    }
+    
+    .btn-outline-warning {
+        border: 1px solid #ffc107;
+        color: #ffc107;
+        background: transparent;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.8rem;
+        margin-right: 0.5rem;
+    }
+    
+    .btn-outline-warning:hover {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .ride-status.completed {
+        color: #28a745;
+    }
+    
+    .ride-status.pending {
+        color: #ffc107;
+    }
+    
+    .ride-status.cancelled {
+        color: #dc3545;
+    }
+    
+    .ride-status.ongoing {
+        color: #007bff;
+    }
+    
+    .booking-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .ride-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    </style>
+    
     <script src="/assets/js/scripts.js"></script>
 </body>
 </html>

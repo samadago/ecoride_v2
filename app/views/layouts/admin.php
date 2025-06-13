@@ -64,6 +64,11 @@
                         </a>
                     </li>
                     <li>
+                        <a href="/admin/reviews" <?php echo ($currentPage ?? '') === 'admin-reviews' ? 'class="active"' : ''; ?>>
+                            <i class="fas fa-comment"></i> Modération des commentaires
+                        </a>
+                    </li>
+                    <li>
                         <a href="/admin/credit-requests" <?php echo ($currentPage ?? '') === 'admin-credit-requests' ? 'class="active"' : ''; ?>>
                             <i class="fas fa-coins"></i> Demandes de crédit
                         </a>

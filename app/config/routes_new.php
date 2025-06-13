@@ -55,6 +55,16 @@ $routes = [
     '/admin/credit-requests' => ['controller' => 'AdminController', 'action' => 'creditRequests'],
     '/admin/credit-requests/process' => ['controller' => 'AdminController', 'action' => 'processCreditRequest'],
     '/admin/credit-add' => ['controller' => 'AdminController', 'action' => 'addCredit'],
+    
+    // Admin review moderation routes
+    '/admin/reviews' => ['controller' => 'AdminController', 'action' => 'reviews'],
+    '/admin/reviews/moderate' => ['controller' => 'AdminController', 'action' => 'moderateReview'],
+    '/admin/reviews/delete/([0-9]+)' => ['controller' => 'AdminController', 'action' => 'deleteReview', 'params' => ['ratingId' => 1]],
+    
+    // Review routes
+    '/avis/creer' => ['controller' => 'ReviewController', 'action' => 'create'],
+    '/avis/store' => ['controller' => 'ReviewController', 'action' => 'store'],
+    '/avis/utilisateur' => ['controller' => 'ReviewController', 'action' => 'userReviews'],
 
     // Add API routes
     '/api/cities' => ['controller' => 'ApiController', 'action' => 'searchCities'],

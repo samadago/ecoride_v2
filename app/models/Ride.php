@@ -65,10 +65,22 @@ class Ride {
                r.available_seats as seats_available,
                v.brand as vehicle_type,
                v.eco_friendly,
-               u.profile_image
+               u.profile_image,
+               (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) as remaining_seats
                FROM rides r 
                JOIN users u ON r.driver_id = u.id 
                JOIN vehicles v ON r.vehicle_id = v.id
+               WHERE r.status = 'pending'
+               AND r.departure_time > NOW()
+               AND (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) > 0
                GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly, u.profile_image
                ORDER BY r.departure_time ASC";
         return $this->db->fetchAll($sql);
@@ -87,7 +99,11 @@ class Ride {
                u.id as user_id,
                u.profile_image,
                r.available_seats as seats_available,
-               (r.available_seats - COALESCE((SELECT COUNT(*) FROM bookings b WHERE b.ride_id = r.id AND b.status = 'confirmed'), 0)) as remaining_seats,
+               (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) as remaining_seats,
                v.brand as vehicle_type,
                v.eco_friendly,
                r.status
@@ -110,7 +126,7 @@ class Ride {
      * 
      * The list of rides is ordered by departure time. 
      * The list of rides is filtered by the number of available seats.
-     * Only returns rides that haven't departed yet.
+     * Only returns rides that haven't departed yet and are not started.
      * 
      * @param string $departure Departure location
      * @param string $arrival Arrival location
@@ -135,19 +151,28 @@ class Ride {
             }
         }
         
-        // Base SQL query
+        // Base SQL query - only show pending rides with available seats
         $sql = "SELECT r.*,
                CONCAT(u.first_name, ' ', u.last_name) as driver_name,
                r.available_seats as seats_available,
                v.brand as vehicle_type,
                v.eco_friendly,
-               u.profile_image
+               u.profile_image,
+               (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) as remaining_seats
                FROM rides r
                JOIN users u ON r.driver_id = u.id
                JOIN vehicles v ON r.vehicle_id = v.id
-               WHERE r.available_seats > 0
-               AND r.status IN ('pending', 'ongoing')
-               AND r.departure_time > NOW()";
+               WHERE r.status = 'pending'
+               AND r.departure_time > NOW()
+               AND (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) > 0";
         
         $params = [];
         
@@ -190,19 +215,28 @@ class Ride {
      * @return array
      */
     public function flexibleSearch($filters = []) {
-        // Base SQL query
+        // Base SQL query - only show pending rides with available seats
         $sql = "SELECT r.*,
                CONCAT(u.first_name, ' ', u.last_name) as driver_name,
                r.available_seats as seats_available,
                v.brand as vehicle_type,
                v.eco_friendly,
-               u.profile_image
+               u.profile_image,
+               (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) as remaining_seats
                FROM rides r
                JOIN users u ON r.driver_id = u.id
                JOIN vehicles v ON r.vehicle_id = v.id
-               WHERE r.available_seats > 0
-               AND r.status IN ('pending', 'ongoing')
-               AND r.departure_time > NOW()";
+               WHERE r.status = 'pending'
+               AND r.departure_time > NOW()
+               AND (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) > 0";
         
         $params = [];
         
@@ -237,7 +271,11 @@ class Ride {
         
         // Add minimum seats filter if provided
         if (!empty($filters['min_seats'])) {
-            $sql .= " AND r.available_seats >= ?";
+            $sql .= " AND (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) >= ?";
             $params[] = intval($filters['min_seats']);
         }
         
@@ -265,13 +303,22 @@ class Ride {
                r.available_seats as seats_available,
                v.brand as vehicle_type,
                v.eco_friendly,
-               u.profile_image
+               u.profile_image,
+               (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) as remaining_seats
                FROM rides r
                JOIN users u ON r.driver_id = u.id
                JOIN vehicles v ON r.vehicle_id = v.id
-               WHERE r.available_seats > 0
-               AND r.status IN ('pending', 'ongoing')
+               WHERE r.status = 'pending'
                AND r.departure_time > NOW()
+               AND (r.available_seats - COALESCE((
+                   SELECT SUM(b.seats_booked) 
+                   FROM bookings b 
+                   WHERE b.ride_id = r.id AND b.status IN ('pending', 'confirmed')
+               ), 0)) > 0
                GROUP BY r.id, u.first_name, u.last_name, v.brand, v.eco_friendly, u.profile_image
                ORDER BY r.departure_time ASC
                LIMIT ?";
