@@ -27,13 +27,42 @@ class User {
         // Handle profile image upload
         $profileImage = null;
         if (isset($data['profile_image']) && $data['profile_image']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/uploads/';
+            // Use the correct path for Docker environment
+            $uploadDir = dirname($_SERVER['DOCUMENT_ROOT']) . '/public/assets/uploads/';
+            
+            // Create upload directory if it doesn't exist
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0755, true)) {
+                    error_log("Failed to create upload directory: " . $uploadDir);
+                    return false;
+                }
+            }
+            
+            // Check if directory is writable
+            if (!is_writable($uploadDir)) {
+                error_log("Upload directory is not writable: " . $uploadDir);
+                return false;
+            }
+            
             $fileExtension = strtolower(pathinfo($data['profile_image']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            
+            // Validate file extension
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                error_log("Invalid file extension: " . $fileExtension);
+                return false;
+            }
+            
             $newFileName = uniqid('profile_') . '.' . $fileExtension;
             $uploadFile = $uploadDir . $newFileName;
             
             if (move_uploaded_file($data['profile_image']['tmp_name'], $uploadFile)) {
+                // Set proper file permissions
+                chmod($uploadFile, 0644);
                 $profileImage = 'assets/uploads/' . $newFileName;
+            } else {
+                error_log("Failed to move uploaded file to: " . $uploadFile);
+                return false;
             }
         }
         
@@ -109,7 +138,8 @@ class User {
 
         // Handle profile image upload
         if (isset($data['profile_image']) && $data['profile_image']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/uploads/';
+            // Use the correct path for Docker environment
+            $uploadDir = dirname($_SERVER['DOCUMENT_ROOT']) . '/public/assets/uploads/';
             
             // Create upload directory if it doesn't exist
             if (!is_dir($uploadDir)) {
@@ -146,7 +176,7 @@ class User {
                 
                 // Delete old profile image if exists
                 if ($currentUser['profile_image']) {
-                    $oldFile = $_SERVER['DOCUMENT_ROOT'] . '/' . $currentUser['profile_image'];
+                    $oldFile = dirname($_SERVER['DOCUMENT_ROOT']) . '/public/' . $currentUser['profile_image'];
                     if (file_exists($oldFile)) {
                         unlink($oldFile);
                     }
@@ -273,7 +303,7 @@ class User {
             
             // If successful and user had a profile image, delete it
             if ($result && $user && !empty($user['profile_image'])) {
-                $profileImage = $_SERVER['DOCUMENT_ROOT'] . '/' . $user['profile_image'];
+                $profileImage = dirname($_SERVER['DOCUMENT_ROOT']) . '/public/' . $user['profile_image'];
                 if (file_exists($profileImage)) {
                     unlink($profileImage);
                 }
