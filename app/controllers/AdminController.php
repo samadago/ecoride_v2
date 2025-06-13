@@ -592,4 +592,91 @@ class AdminController {
         header('Location: /admin/credit-requests');
         exit;
     }
+
+    /**
+     * List reviews pending moderation
+     */
+    public function reviews() {
+        $this->requireAdmin();
+        
+        $pageTitle = 'EcoRide - Modération des commentaires';
+        $currentPage = 'admin-reviews';
+        
+        // Load Rating model
+        require_once BASE_PATH . '/app/models/Rating.php';
+        $ratingModel = new \App\Models\Rating();
+        
+        // Get pending reviews
+        $pendingReviews = $ratingModel->getPendingRatings(50);
+        
+        // Start output buffering
+        ob_start();
+        
+        // Include the view
+        require_once BASE_PATH . '/app/views/admin/reviews.php';
+        
+        // Get the buffered content and clean the buffer
+        $content = ob_get_clean();
+        
+        // Include the admin layout template
+        require_once BASE_PATH . '/app/views/layouts/admin.php';
+    }
+    
+    /**
+     * Moderate a review (approve/reject)
+     */
+    public function moderateReview() {
+        $this->requireAdmin();
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /admin/reviews');
+            exit;
+        }
+        
+        $ratingId = $_POST['rating_id'] ?? 0;
+        $action = $_POST['action'] ?? '';
+        $notes = $_POST['notes'] ?? '';
+        
+        if (!$ratingId || !in_array($action, ['approve', 'reject'])) {
+            $_SESSION['error'] = 'Paramètres invalides.';
+            header('Location: /admin/reviews');
+            exit;
+        }
+        
+        // Load Rating model
+        require_once BASE_PATH . '/app/models/Rating.php';
+        $ratingModel = new \App\Models\Rating();
+        
+        $status = $action === 'approve' ? 'approved' : 'rejected';
+        $adminId = \App\Helpers\Auth::user()['id'];
+        
+        if ($ratingModel->moderate($ratingId, $status, $adminId, $notes)) {
+            $_SESSION['success'] = "L'avis a été " . ($action === 'approve' ? 'approuvé' : 'rejeté') . " avec succès.";
+        } else {
+            $_SESSION['error'] = "Erreur lors de la modération de l'avis.";
+        }
+        
+        header('Location: /admin/reviews');
+        exit;
+    }
+    
+    /**
+     * Delete a review
+     */
+    public function deleteReview($ratingId) {
+        $this->requireAdmin();
+        
+        // Load Rating model
+        require_once BASE_PATH . '/app/models/Rating.php';
+        $ratingModel = new \App\Models\Rating();
+        
+        if ($ratingModel->delete($ratingId)) {
+            $_SESSION['success'] = "L'avis a été supprimé avec succès.";
+        } else {
+            $_SESSION['error'] = "Erreur lors de la suppression de l'avis.";
+        }
+        
+        header('Location: /admin/reviews');
+        exit;
+    }
 } 
